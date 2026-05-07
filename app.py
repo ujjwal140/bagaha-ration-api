@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import RealDictCursor  # 🛠️ Naya Hathiyar
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -6,7 +7,6 @@ app = Flask(__name__)
 SECRET_KEY = "BAGAHA_SETH_100"
 
 def get_db_connection():
-    # Mumbai Pooler Path (Port 6543)
     return psycopg2.connect(
         host="aws-1-ap-south-1.pooler.supabase.com",
         database="postgres",
@@ -21,13 +21,13 @@ def home():
 
 @app.route('/items')
 def get_items():
-    # Browser se chabi uthayega
     key = request.args.get('api_key')
     if key != SECRET_KEY:
         return "❌ Access Denied: Galat Chabi!", 403
     
     conn = get_db_connection()
-    cur = conn.cursor()
+    # 🎩 Magic: RealDictCursor data ko VIP format mein badlega
+    cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute('SELECT * FROM ration_items;')
     data = cur.fetchall()
     cur.close()
@@ -36,3 +36,4 @@ def get_items():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+    
