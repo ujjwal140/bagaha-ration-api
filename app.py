@@ -17,6 +17,42 @@ def get_db_connection():
 
 @app.route('/')
 def home():
+    # Ye HTML tera asli "App" ka chehra hai
+    return """
+    <html>
+        <body style="font-family: Arial; text-align: center; background-color: #f4f4f9; padding: 50px;">
+            <h1 style="color: #333;">👑 Bagaha Seth Inventory</h1>
+            <p>Apni tijori ka saaman yahan dekhein:</p>
+            
+            <button onclick="loadData()" style="padding: 15px 30px; font-size: 18px; background-color: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                📦 Tijori Kholo
+            </button>
+            
+            <ul id="itemList" style="list-style: none; padding: 0; margin-top: 30px; font-size: 22px; color: #555;"></ul>
+            
+            <script>
+                // Ye script tere backend se data mangti hai aur screen par sajati hai
+                function loadData() {
+                    document.getElementById('itemList').innerHTML = "⏳ Engine saaman nikal raha hai...";
+                    
+                    fetch('/items?api_key=BAGAHA_SETH_100')
+                    .then(response => response.json())
+                    .then(data => {
+                        let listHtml = "";
+                        data.forEach(item => {
+                            listHtml += `<li style="background: white; margin: 10px auto; padding: 15px; width: 80%; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><b>${item.name}</b> : ${item.quantity} kg</li>`;
+                        });
+                        document.getElementById('itemList').innerHTML = listHtml;
+                    })
+                    .catch(error => {
+                        document.getElementById('itemList').innerHTML = "❌ Error aagaya seth!";
+                    });
+                }
+            </script>
+        </body>
+    </html>
+    """
+def home():
     return "🔥 Bagaha API is Live!"
 
 # 1. Samaan dekhne ka rasta
