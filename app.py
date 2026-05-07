@@ -13,10 +13,11 @@ SECRET_KEY = "BAGAHA_SETH_100"
 
 # Supabase PostgreSQL connection
 conn = psycopg2.connect(
-    host="db.ayopsyzeudpawcppwsgg.supabase.co",
+    host="postgresql://postgres.ayopsyzeudpawcppwsgg:[YOUR-PASSWORD]@aws-1-ap-south-1.pooler.supabase.com:6543/postgres",
     database="postgres",
     user="postgres",
-    password="BagahaRation@2026!"
+    password="BagahaRation@2026!",
+    port=6543
 )
 
 # 🔐 Har request mein API Key check hoga
