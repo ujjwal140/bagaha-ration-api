@@ -13,9 +13,9 @@ SECRET_KEY = "BAGAHA_SETH_100"
 
 # Supabase PostgreSQL connection
 conn = psycopg2.connect(
-    host="postgresql://postgres.ayopsyzeudpawcppwsgg:[YOUR-PASSWORD]@aws-1-ap-south-1.pooler.supabase.com:6543/postgres",
+    host="aws-1-ap-south-1.pooler.supabase.com",
     database="postgres",
-    user="postgres",
+    user="postgres.ayopsyzeudpawcppwsgg",
     password="BagahaRation@2026!",
     port=6543
 )
