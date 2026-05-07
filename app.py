@@ -22,7 +22,7 @@ conn = psycopg2.connect(
 
 # 🔐 Har request mein API Key check hoga
 def check_key(req):
-    api_key = req.headers.get("x-api-key")
+    api_key = req.args.get("api-key")
 
     if api_key != SECRET_KEY:
         return False
