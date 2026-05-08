@@ -5,8 +5,8 @@ from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 
-# --- CONFIGURATION (PURANI VALUES BARKARAAR HAIN) ---
-DB_URL = "postgresql://postgres.ayopsyzeudpawcppwsgg:BagahaRation%402026!@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
+# --- CONFIGURATION ---
+DB_URL ="postgresql://postgres.ayopsyzeudpawcppwsgg:BagahaRation%402026!@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
 SECRET_KEY = "BAGAHA_SETH_100"
 
 def get_db_connection():
@@ -17,7 +17,7 @@ def home():
     return """
     <html>
         <head>
-            <title>Bagaha Seth ERP Final</title>
+            <title>Bagaha Seth ERP v3</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
                 * { box-sizing: border-box; }
@@ -33,6 +33,7 @@ def home():
                 th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
                 th { background: #f8f9fa; color: #7f8c8d; text-transform: uppercase; font-size: 12px; }
                 .total-tag { color: #27ae60; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; }
+                .del-btn { background: #e67e22; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
             </style>
         </head>
         <body>
@@ -48,7 +49,7 @@ def home():
                                 <option value="Bori">Bori</option>
                                 <option value="Packet">Packet</option>
                                 <option value="Box">Box</option>
-                                <option value="Kg">Kg</option>
+                                <option value="Khula (Loose)">Khula (Loose)</option>
                             </select>
                         </div>
                         <div style="flex: 1;"><label>Unit</label>
@@ -60,7 +61,7 @@ def home():
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <div style="flex: 1;"><label>Count</label><input type="number" id="p_count" value="1"></div>
+                        <div style="flex: 1;"><label>Count (Kitna hai?)</label><input type="number" id="p_count" value="1"></div>
                         <div style="flex: 1;"><label>Wazan/Pack</label><input type="number" id="p_weight" placeholder="50"></div>
                     </div>
 
@@ -69,7 +70,7 @@ def home():
 
                 <div class="table-wrapper">
                     <table>
-                        <thead><tr><th>Item</th><th>Pack</th><th>Qty</th><th>Total</th></tr></thead>
+                        <thead><tr><th>Item</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead>
                         <tbody id="inventory-body"></tbody>
                     </table>
                 </div>
@@ -83,10 +84,10 @@ def home():
                     body.innerHTML = '';
                     data.forEach(item => {
                         body.innerHTML += `<tr>
-                            <td><b>${item.name}</b></td>
-                            <td>${item.packaging_type}</td>
-                            <td>${item.packages_count}</td>
+                            <td><b>${item.name}</b><br><small style="color:gray;">${item.packaging_type}</small></td>
+                            <td><b style="font-size:16px;">${item.packages_count}</b></td>
                             <td><span class="total-tag">${item.total_base_weight} ${item.unit || 'kg'}</span></td>
+                            <td><button class="del-btn" onclick="sellItem(${item.id}, ${item.packages_count}, '${item.name}')">🛒 Bika</button></td>
                         </tr>`;
                     });
                 }
@@ -98,9 +99,25 @@ def home():
                     const c = document.getElementById('p_count').value;
                     const w = document.getElementById('p_weight').value;
                     if(!n || !c || !w) { alert("Seth ji, pura detail bhariye!"); return; }
+                    
                     const res = await fetch(`/add?api_key=BAGAHA_SETH_100&name=${n}&packaging_type=${t}&packages_count=${c}&weight_per_package=${w}&unit=${u}`);
-                    if(res.ok) { location.reload(); } else { alert("Error!"); }
+                    if(res.ok) { location.reload(); } else { alert("Save nahi hua, Error check karo!"); }
                 }
+
+                async function sellItem(id, current_qty, item_name) {
+                    let qty = prompt(`'${item_name}' godown mein abhi ${current_qty} pada hai.\\n\\nKitna piece/pack bika?`, "1");
+                    
+                    if (qty !== null && qty !== "") {
+                        let sell_count = parseInt(qty);
+                        if(sell_count > 0) {
+                            const res = await fetch(`/sell/${id}?api_key=BAGAHA_SETH_100&qty=${sell_count}`);
+                            if(res.ok) { location.reload(); } else { alert("Update fail ho gaya!"); }
+                        } else {
+                            alert("Sahi number dalo seth!");
+                        }
+                    }
+                }
+
                 loadItems();
             </script>
         </body>
@@ -128,10 +145,40 @@ def add_item():
     p_count = int(request.args.get('packages_count', 0))
     p_weight = float(request.args.get('weight_per_package', 0.0))
     total = p_count * p_weight
+    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('''INSERT INTO ration_items (name, packaging_type, packages_count, weight_per_package, total_base_weight, unit) 
                    VALUES (%s, %s, %s, %s, %s, %s);''', (name, p_type, p_count, p_weight, total, unit))
+    conn.commit(); cur.close(); conn.close()
+    return "OK"
+
+@app.route('/sell/<int:item_id>')
+def sell_item(item_id):
+    key = request.args.get('api_key')
+    if key != SECRET_KEY: return "Denied", 403
+    
+    sell_count = int(request.args.get('qty', 1))
+    
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    # Pehle tijori se pucho item kitna pada hai
+    cur.execute('SELECT * FROM ration_items WHERE id = %s;', (item_id,))
+    item = cur.fetchone()
+    
+    if item:
+        new_count = item['packages_count'] - sell_count
+        
+        if new_count <= 0:
+            # Agar sab bik gaya, toh table se saaf kar do
+            cur.execute('DELETE FROM ration_items WHERE id = %s;', (item_id,))
+        else:
+            # Agar maal bacha hai, toh update karo (Count aur Wazan dono)
+            new_total = new_count * item['weight_per_package']
+            cur.execute('UPDATE ration_items SET packages_count = %s, total_base_weight = %s WHERE id = %s;', 
+                        (new_count, new_total, item_id))
+            
     conn.commit(); cur.close(); conn.close()
     return "OK"
 
