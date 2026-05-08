@@ -7,7 +7,8 @@ from psycopg2.extras import RealDictCursor
 app = Flask(__name__)
 
 # Database settings
-DB_URL = "postgresql://postgres.xxx" # APNI PURANI DB URL YAHAN RAKHNA
+DB_URL = postgresql://postgres.eovvbeajyptosjebtqxe:Bagaha_seth_100@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+# APNI PURANI DB URL YAHAN RAKHNA
 SECRET_KEY = "BAGAHA_SETH_100"
 
 def get_db_connection():
