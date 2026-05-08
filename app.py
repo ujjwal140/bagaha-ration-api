@@ -70,29 +70,46 @@ def get_items():
     conn.close()
     return jsonify(data)
 
-# 2. 🆕 Naya samaan dalne ka rasta
+# 2. # 2. 🆕 Naya samaan dalne ka rasta (Smart Logic Ke Sath)
 @app.route('/add')
 def add_item():
     key = request.args.get('api_key')
     if key != SECRET_KEY:
         return "❌ Access Denied", 403
-        
-    # Link se naam aur quantity nikalna
-    new_name = request.args.get('name')
-    new_qty = request.args.get('quantity')
     
-    if not new_name or not new_qty:
-        return "⚠️ Error: Samaan ka naam (?name=...) aur quantity (&quantity=...) dono dena zaroori hai!", 400
+    # 1. Link se naye dabbon (variables) ka data nikalna
+    new_name = request.args.get('name')
+    pack_type = request.args.get('packaging_type')
+    
+    # Text ko Number mein badalna zaroori hai math karne ke liye
+    try:
+        pack_count = int(request.args.get('packages_count', 0))
+        weight_per_pack = float(request.args.get('weight_per_package', 0.0))
+    except ValueError:
+        return "⚠️ Error: Ginti aur Wazan mein sirf number aayega!", 400
+    
+    if not new_name or pack_count == 0:
+        return "⚠️ Error: Samaan ka naam aur Packages Count likhna zaroori hai!", 400
+
+    # 2. 🧠 TERA LOGIC YAHAN HAI (Total weight nikalna)
+    total_weight = pack_count * weight_per_pack
 
     conn = get_db_connection()
     cur = conn.cursor()
-    # SQL Command: Tijori mein naya saaman daalo
-    cur.execute('INSERT INTO ration_items (name, quantity) VALUES (%s, %s);', (new_name, new_qty))
-    conn.commit() # 🔒 Samaan rakh kar save karna!
+    
+    # 3. SQL Command: Tijori ke 5 naye racks mein data daalna
+    cur.execute('''
+        INSERT INTO ration_items 
+        (name, packaging_type, packages_count, weight_per_package, total_base_weight) 
+        VALUES (%s, %s, %s, %s, %s);
+    ''', (new_name, pack_type, pack_count, weight_per_pack, total_weight))
+    
+    conn.commit() # 🔒 Samaan rakh kar save karna
     cur.close()
     conn.close()
+
+    return f"✅ Jaadu Ho Gaya! {pack_count} {pack_type} (Total: {total_weight} kg) {new_name} Add Hua!"
     
-    return f"✅ Jaadu Ho Gaya! Naya Samaan Add Hua: {new_name} (Quantity: {new_qty})"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
