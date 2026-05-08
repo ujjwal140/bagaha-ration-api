@@ -14,47 +14,69 @@ def get_db_connection():
         password="BagahaRation@2026!",
         port=6543
     )
-
+def home():
+    return "🔥 Bagaha API is Live!"
 @app.route('/')
 def home():
-    # Ye HTML tera asli "App" ka chehra hai
     return """
     <html>
-        <body style="font-family: Arial; text-align: center; background-color: #f4f4f9; padding: 50px;">
-            <h1 style="color: #333;">👑 Bagaha Seth Inventory</h1>
-            <p>Apni tijori ka saaman yahan dekhein:</p>
-            
-            <button onclick="loadData()" style="padding: 15px 30px; font-size: 18px; background-color: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                📦 Tijori Kholo
-            </button>
-            
-            <ul id="itemList" style="list-style: none; padding: 0; margin-top: 30px; font-size: 22px; color: #555;"></ul>
-            
+        <head>
+            <title>Bagaha Seth Inventory</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+                .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+                h2 { color: #333; text-align: center; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                th { background-color: #2ecc71; color: white; }
+                tr:nth-child(even) { background-color: #f9f9f9; }
+                .refresh-btn { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>📦 Bagaha Seth Inventory</h2>
+                <button class="refresh-btn" onclick="loadItems()">🔄 Hisaab Refresh Karo</button>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Samaan</th>
+                            <th>Packing</th>
+                            <th>Count</th>
+                            <th>Wazan/Pack</th>
+                            <th>Total Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-body">
+                        </tbody>
+                </table>
+            </div>
+
             <script>
-                // Ye script tere backend se data mangti hai aur screen par sajati hai
-                function loadData() {
-                    document.getElementById('itemList').innerHTML = "⏳ Engine saaman nikal raha hai...";
-                    
-                    fetch('/items?api_key=BAGAHA_SETH_100')
-                    .then(response => response.json())
-                    .then(data => {
-                        let listHtml = "";
-                        data.forEach(item => {
-                            listHtml += `<li style="background: white; margin: 10px auto; padding: 15px; width: 80%; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><b>${item.name}</b> : ${item.quantity} kg</li>`;
-                        });
-                        document.getElementById('itemList').innerHTML = listHtml;
-                    })
-                    .catch(error => {
-                        document.getElementById('itemList').innerHTML = "❌ Error aagaya seth!";
+                async function loadItems() {
+                    const response = await fetch('/items?api_key=BAGAHA_SETH_100');
+                    const data = await response.json();
+                    let tableBody = document.getElementById('inventory-body');
+                    tableBody.innerHTML = '';
+
+                    data.forEach(item => {
+                        let row = `<tr>
+                            <td><b>${item.name}</b></td>
+                            <td>${item.packaging_type || '-'}</td>
+                            <td>${item.packages_count || 0}</td>
+                            <td>${item.weight_per_package || 0} kg</td>
+                            <td><span style="color:green; font-weight:bold;">${item.total_base_weight || 0} kg</span></td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
                     });
                 }
+                // Page khulte hi data load ho jaye
+                loadItems();
             </script>
         </body>
     </html>
     """
-def home():
-    return "🔥 Bagaha API is Live!"
-
 # 1. Samaan dekhne ka rasta
 @app.route('/items')
 def get_items():
